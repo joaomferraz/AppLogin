@@ -83,5 +83,3 @@ flutter run
 ```
 ---
 
-Desenvolvido por \[Seu Nome], UTFPR – 2025.
-
