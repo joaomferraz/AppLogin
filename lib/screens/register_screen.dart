@@ -27,7 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
       final newUser = UserModel(
         email: _emailController.text,
-        password: _senhaController.text,
+        password: _senhaController.text
       );
       await UserDao.insertUser(newUser);
       ScaffoldMessenger.of(context).showSnackBar(

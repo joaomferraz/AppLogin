@@ -11,7 +11,6 @@ class HomeScreen extends StatelessWidget {
 
   final UserModel user;
 
-
   void _logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('email_salvo');
@@ -21,7 +20,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _irParaFuncionalidade(BuildContext context) {
+  void _irParaAgenda(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => WelcomeFeatureScreen(user: user)),
@@ -44,8 +43,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -65,9 +63,14 @@ class HomeScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _irParaFuncionalidade(context),
-              child: const Text('Ir para a página de Boas Vindas'),
+            // Adicionando o ícone de calendário como um botão
+            IconButton(
+              icon: const Icon(
+                Icons.calendar_today,
+                size: 50,
+                color: Colors.blue,
+              ),
+              onPressed: () => _irParaAgenda(context), // Ação ao clicar
             ),
           ],
         ),
