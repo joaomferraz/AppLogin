@@ -13,6 +13,8 @@ void main() {
 class MyApp extends StatelessWidget {
   final ThemeController themeController = ThemeController();
 
+  MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(

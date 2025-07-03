@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/login_text_form_field.dart';
 import '../widgets/custom_card_widget.dart';
 import '../theme/theme_controller.dart';
-import '../models/user_model.dart';
 import '../database/user_dao.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';

@@ -7,7 +7,7 @@ import 'login_screen.dart';
 import 'welcome_feature_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key, required this.user});
+  const HomeScreen({super.key, required this.user});
 
   final UserModel user;
 

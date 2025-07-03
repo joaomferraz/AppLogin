@@ -1,33 +1,16 @@
-// lib/database/user_dao.dart
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import '../models/user_model.dart';
+import 'package:sqflite/sqflite.dart';
+import 'database_service.dart'; // Importe o serviço central
 
 class UserDao {
-  static const _databaseName = "users.db";
-  static const _tableName = "users";
+  // ✅ USA O NOME DA TABELA DEFINIDO NO SERVIÇO
+  static const String _tableName = DatabaseService.usersTable;
 
-  static Future<Database> _getDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _databaseName);
-
-    return openDatabase(
-      path,
-      version: 1,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE $_tableName (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE,
-            password TEXT
-          )
-        ''');
-      },
-    );
-  }
+  // ❌ A FUNÇÃO _getDatabase() FOI REMOVIDA
 
   static Future<void> insertUser(UserModel user) async {
-    final db = await _getDatabase();
+    // ✅ USA A INSTÂNCIA DO SERVIÇO
+    final db = await DatabaseService.instance.database;
     await db.insert(
       _tableName,
       user.toMap(),
@@ -36,7 +19,8 @@ class UserDao {
   }
 
   static Future<UserModel?> getUserByEmail(String email) async {
-    final db = await _getDatabase();
+    // ✅ USA A INSTÂNCIA DO SERVIÇO
+    final db = await DatabaseService.instance.database;
     final result = await db.query(
       _tableName,
       where: 'email = ?',

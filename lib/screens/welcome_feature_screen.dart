@@ -4,6 +4,8 @@ import '../models/user_model.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/event_model.dart';
 import '../database/event_dao.dart';
+import '../database/recurring_event_dao.dart';
+import 'add_recurring_event_screen.dart';
 
 // Helper para o LinkedHashMap
 int getHashCode(DateTime key) {
@@ -49,15 +51,17 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
   }
 
   Future<void> _loadEventsForMonth(DateTime month) async {
-    final allEventsForMonth = await EventDao.getEventsForMonth(month);
+    final firstDay = DateTime(month.year, month.month, 1);
+    final lastDay = DateTime(month.year, month.month + 1, 0);
 
     final newEvents = LinkedHashMap<DateTime, List<EventModel>>(
       equals: isSameDay,
       hashCode: getHashCode,
     );
 
-    for (final event in allEventsForMonth) {
-      // Normaliza a data para meia-noite para evitar problemas com fuso horário
+    // 1. CARREGA OS EVENTOS NORMAIS (como antes)
+    final singleEvents = await EventDao.getEventsForMonth(month);
+    for (final event in singleEvents) {
       final day = DateTime.utc(event.date.year, event.date.month, event.date.day);
       if (newEvents[day] == null) {
         newEvents[day] = [];
@@ -65,9 +69,32 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
       newEvents[day]!.add(event);
     }
 
+    // 2. PARTE NOVA: PROCESSA OS EVENTOS RECORRENTES
+    final recurringRules = await RecurringEventDao.getAllRecurringEvents();
+
+    // Itera por cada dia do mês visível no calendário
+    for (var day = firstDay; day.isBefore(lastDay.add(const Duration(days: 1))); day = day.add(const Duration(days: 1))) {
+      // Para cada dia, verifica todas as regras de recorrência
+      for (final rule in recurringRules) {
+        // A regra é válida para este dia?
+        if (day.weekday == rule.daysOfWeek.firstWhere((d) => d == day.weekday, orElse: () => -1) &&
+            (day.isAfter(rule.startDate) || isSameDay(day, rule.startDate)) &&
+            (day.isBefore(rule.endDate) || isSameDay(day, rule.endDate))) {
+              
+          // Se sim, cria um EventModel "virtual" para este dia
+          final recurringInstance = EventModel(title: rule.title, date: day);
+          final dayUtc = DateTime.utc(day.year, day.month, day.day);
+          
+          if (newEvents[dayUtc] == null) {
+            newEvents[dayUtc] = [];
+          }
+          newEvents[dayUtc]!.add(recurringInstance);
+        }
+      }
+    }
+
     setState(() {
       _events = newEvents;
-      // Atualiza a lista de eventos para o dia que já estava selecionado
       _selectedEvents.value = _getEventsForDay(_selectedDay);
     });
   }
@@ -181,6 +208,22 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () async {
+          // Navega para a tela de cadastro
+          final result = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(builder: (_) => const AddRecurringEventScreen()),
+          );
+
+          // Se o resultado for 'true', significa que um novo evento foi salvo.
+          // Então, recarregamos os eventos para atualizar o calendário.
+          if (result == true) {
+            _loadEventsForMonth(_focusedDay);
+          }
+        },
       ),
     );
   }
