@@ -14,6 +14,24 @@ class EventDao {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
+  static Future<void> updateEvent(EventModel event) async {
+    final db = await DatabaseService.instance.database;
+    await db.update(
+      _tableName,
+      event.toMap(),
+      where: 'id = ?',
+      whereArgs: [event.id],
+    );
+  }
+
+  static Future<void> deleteEvent(int id) async {
+    final db = await DatabaseService.instance.database;
+    await db.delete(
+      _tableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 
   // Função para buscar os eventos por data
   static Future<List<EventModel>> getEventsByDate(DateTime date) async {

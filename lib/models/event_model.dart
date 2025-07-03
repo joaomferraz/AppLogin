@@ -1,12 +1,14 @@
 class EventModel {
-  final int? id;
+  final int? id; // ID do evento único
   final String title;
   final DateTime date;
+  final int? recurringRuleId;
 
   EventModel({
     this.id,
     required this.title,
     required this.date,
+    this.recurringRuleId, 
   });
 
   // Converte o evento para um mapa para salvar no banco de dados

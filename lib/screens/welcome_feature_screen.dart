@@ -6,6 +6,7 @@ import '../models/event_model.dart';
 import '../database/event_dao.dart';
 import '../database/recurring_event_dao.dart';
 import 'add_recurring_event_screen.dart';
+import 'edit_event_screen.dart';
 
 // Helper para o LinkedHashMap
 int getHashCode(DateTime key) {
@@ -42,6 +43,133 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
 
     // Carrega os eventos para o mês inicial
     _loadEventsForMonth(_focusedDay);
+  }
+
+  void _showEventActionsDialog(EventModel event) {
+    // Se é um evento gerado por uma regra recorrente
+    if (event.recurringRuleId != null) {
+      _showRecurringEventActionsDialog(event.recurringRuleId!, event.title);
+    } 
+    // Se é um evento único, salvo no banco
+    else if (event.id != null) {
+      _showSingleEventActionsDialog(event);
+    }
+  }
+
+  void _showSingleEventActionsDialog(EventModel event) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(event.title),
+        content: const Text('O que você gostaria de fazer com este evento?'),
+        actions: [
+          TextButton(
+            child: const Text('Excluir'),
+            onPressed: () async {
+              Navigator.pop(context); // Fecha o diálogo de ações
+              
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Confirmar Exclusão'),
+                  content: const Text('Você tem certeza que deseja excluir este evento?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                    TextButton(onPressed: () => Navigator.pop(context, true), style: TextButton.styleFrom(foregroundColor: Colors.red), child: const Text('Excluir')),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                await EventDao.deleteEvent(event.id!);
+                _loadEventsForMonth(_focusedDay); // Atualiza o calendário
+              }
+            },
+          ),
+          TextButton(
+            child: const Text('Editar'),
+            onPressed: () async {
+              Navigator.pop(context); // Fecha o diálogo de ações
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => EditEventScreen(event: event)),
+              );
+              if (result == true) {
+                _loadEventsForMonth(_focusedDay); // Atualiza o calendário
+              }
+            },
+          ),
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRecurringEventActionsDialog(int ruleId, String title) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: const Text('Este é um evento recorrente. A ação afetará todas as ocorrências.'),
+        actions: [
+          TextButton(
+            child: const Text('Excluir Regra'),
+              onPressed: () async {
+                Navigator.pop(context); // Fecha o diálogo de ações
+
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Confirmar Exclusão'),
+                    content: const Text('Você tem certeza? A regra e todas as suas repetições serão excluídas permanentemente.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                      TextButton(onPressed: () => Navigator.pop(context, true), style: TextButton.styleFrom(foregroundColor: Colors.red), child: const Text('Excluir Tudo')),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  await RecurringEventDao.deleteRecurringEvent(ruleId);
+                  _loadEventsForMonth(_focusedDay); // Atualiza o calendário
+                }
+              },
+          ),
+          // BOTÃO DE EDITAR ATUALIZADO
+          TextButton(
+            child: const Text('Editar Regra'),
+            onPressed: () async {
+              Navigator.pop(context); // Fecha o diálogo primeiro
+
+              // 1. Busca os dados completos da regra no banco
+              final eventToEdit = await RecurringEventDao.getRecurringEventById(ruleId);
+
+              if (eventToEdit != null && mounted) {
+                // 2. Navega para a tela, passando o objeto para edição
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddRecurringEventScreen(eventToEdit: eventToEdit),
+                  ),
+                );
+
+                // 3. Se a edição foi salva, atualiza o calendário
+                if (result == true) {
+                  _loadEventsForMonth(_focusedDay);
+                }
+              }
+            },
+          ),
+          TextButton(
+            child: const Text('Cancelar'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -82,7 +210,7 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
             (day.isBefore(rule.endDate) || isSameDay(day, rule.endDate))) {
               
           // Se sim, cria um EventModel "virtual" para este dia
-          final recurringInstance = EventModel(title: rule.title, date: day);
+          final recurringInstance = EventModel(title: rule.title, date: day, recurringRuleId: rule.id,);
           final dayUtc = DateTime.utc(day.year, day.month, day.day);
           
           if (newEvents[dayUtc] == null) {
@@ -175,7 +303,10 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
               selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
               onDaySelected: _onDaySelected,
               eventLoader: _getEventsForDay, // Continua usando a mesma função
-              // NOVA PROPRIEDADE: Carrega eventos quando o usuário muda de mês
+              headerStyle: const HeaderStyle(
+                titleCentered: true, 
+                formatButtonVisible: false, 
+              ),
               onPageChanged: (focusedDay) {
                 _focusedDay = focusedDay;
                 _loadEventsForMonth(focusedDay);
@@ -193,8 +324,15 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
                   return ListView.builder(
                     itemCount: value.length,
                     itemBuilder: (context, index) {
+                      final event = value[index];
                       return ListTile(
-                        title: Text(value[index].title),
+                        title: Text(event.title),
+                        // Adiciona um ícone para indicar que é clicável
+                        trailing: const Icon(Icons.more_vert),
+                        onTap: () {
+                          // ABRIR O DIÁLOGO DE AÇÕES
+                          _showEventActionsDialog(event);
+                        },
                       );
                     },
                   );

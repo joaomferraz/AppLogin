@@ -1,9 +1,14 @@
+// screens/add_recurring_event_screen.dart
+
 import 'package:flutter/material.dart';
 import '../models/recurring_event_model.dart';
 import '../database/recurring_event_dao.dart';
 
 class AddRecurringEventScreen extends StatefulWidget {
-  const AddRecurringEventScreen({super.key});
+  // NOVO: Parâmetro opcional para receber o evento a ser editado
+  final RecurringEventModel? eventToEdit;
+
+  const AddRecurringEventScreen({super.key, this.eventToEdit});
 
   @override
   _AddRecurringEventScreenState createState() =>
@@ -12,20 +17,11 @@ class AddRecurringEventScreen extends StatefulWidget {
 
 class _AddRecurringEventScreenState extends State<AddRecurringEventScreen> {
   final _titleController = TextEditingController();
-  DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now().add(const Duration(days: 30));
+  late DateTime _startDate;
+  late DateTime _endDate;
+  late Map<int, bool> _selectedDays;
+  late bool _isEditMode; // NOVO: Flag para saber se estamos em modo de edição
 
-  final Map<int, bool> _selectedDays = {
-    DateTime.monday: false,
-    DateTime.tuesday: false,
-    DateTime.wednesday: false,
-    DateTime.thursday: false,
-    DateTime.friday: false,
-    DateTime.saturday: false,
-    DateTime.sunday: false,
-  };
-
-  // Mudei para um mapa de String para ficar mais legível
   final Map<int, String> _dayLabels = {
     DateTime.monday: 'Seg',
     DateTime.tuesday: 'Ter',
@@ -35,6 +31,27 @@ class _AddRecurringEventScreenState extends State<AddRecurringEventScreen> {
     DateTime.saturday: 'Sáb',
     DateTime.sunday: 'Dom',
   };
+  
+  @override
+  void initState() {
+    super.initState();
+    _isEditMode = widget.eventToEdit != null;
+
+    // Se estiver em modo de edição, preenche os campos com os dados existentes
+    if (_isEditMode) {
+      final event = widget.eventToEdit!;
+      _titleController.text = event.title;
+      _startDate = event.startDate;
+      _endDate = event.endDate;
+      _selectedDays = { for (var day in _dayLabels.keys) day: event.daysOfWeek.contains(day) };
+    } 
+    // Senão, inicializa como antes (modo de adição)
+    else {
+      _startDate = DateTime.now();
+      _endDate = DateTime.now().add(const Duration(days: 30));
+      _selectedDays = { for (var day in _dayLabels.keys) day: false };
+    }
+  }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
@@ -62,7 +79,6 @@ class _AddRecurringEventScreenState extends State<AddRecurringEventScreen> {
         .toList();
 
     if (title.isEmpty || selectedDaysList.isEmpty) {
-      // ✅ FEEDBACK ADICIONADO
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor, preencha o título e selecione pelo menos um dia.'),
@@ -72,25 +88,36 @@ class _AddRecurringEventScreenState extends State<AddRecurringEventScreen> {
       return;
     }
 
-    final newRecurringEvent = RecurringEventModel(
-      title: title,
-      startDate: _startDate,
-      endDate: _endDate,
-      daysOfWeek: selectedDaysList,
-    );
-
-    RecurringEventDao.insertRecurringEvent(newRecurringEvent).then((_) {
-      // Agora o pop vai funcionar, pois o insert não dará mais erro.
-      if (mounted) {
-        Navigator.pop(context, true); 
-      }
-    });
+    // ALTERADO: Lógica para decidir entre ATUALIZAR ou INSERIR
+    if (_isEditMode) {
+      final updatedEvent = RecurringEventModel(
+        id: widget.eventToEdit!.id, // Mantém o ID original
+        title: title,
+        startDate: _startDate,
+        endDate: _endDate,
+        daysOfWeek: selectedDaysList,
+      );
+      RecurringEventDao.updateRecurringEvent(updatedEvent).then((_) {
+        if (mounted) Navigator.pop(context, true);
+      });
+    } else {
+      final newRecurringEvent = RecurringEventModel(
+        title: title,
+        startDate: _startDate,
+        endDate: _endDate,
+        daysOfWeek: selectedDaysList,
+      );
+      RecurringEventDao.insertRecurringEvent(newRecurringEvent).then((_) {
+        if (mounted) Navigator.pop(context, true);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Adicionar Evento Recorrente')),
+      // ALTERADO: Título dinâmico
+      appBar: AppBar(title: Text(_isEditMode ? 'Editar Evento Recorrente' : 'Adicionar Evento Recorrente')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -106,10 +133,9 @@ class _AddRecurringEventScreenState extends State<AddRecurringEventScreen> {
             const SizedBox(height: 20),
             const Text('Repetir nos dias:', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
-            // ✅ CORRIGIDO: `Row` trocada por `Wrap` para evitar overflow
             Wrap(
-              spacing: 8.0, // Espaçamento horizontal
-              runSpacing: 4.0, // Espaçamento vertical
+              spacing: 8.0,
+              runSpacing: 4.0,
               alignment: WrapAlignment.center,
               children: _dayLabels.entries.map((entry) {
                 return ChoiceChip(
@@ -153,7 +179,8 @@ class _AddRecurringEventScreenState extends State<AddRecurringEventScreen> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('Salvar Evento Recorrente'),
+              // ALTERADO: Texto do botão dinâmico
+              child: Text(_isEditMode ? 'Salvar Alterações' : 'Salvar Evento Recorrente'),
             ),
           ],
         ),
