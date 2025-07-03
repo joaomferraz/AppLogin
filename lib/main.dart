@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
       valueListenable: themeController.themeMode,
       builder: (context, themeMode, _) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Login App',
+        title: 'Agenda Pessoal',
         theme: lightTheme,
         darkTheme: darkTheme,
         themeMode: themeMode,

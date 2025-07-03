@@ -116,7 +116,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcome.
   ///
   /// In pt, this message translates to:
-  /// **'Bem-vindo ao Login App!'**
+  /// **'Bem-vindo à sua Agenda Pessoal!'**
   String get welcome;
 }
 

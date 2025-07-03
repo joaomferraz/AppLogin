@@ -18,5 +18,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboard3 => 'Access securely from anywhere.';
 
   @override
-  String get welcome => 'Welcome to the Login App!';
+  String get welcome => 'Welcome to your Schedule App!';
 }

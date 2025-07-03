@@ -340,28 +340,27 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
               ),
             ),
             // Botão para adicionar evento
+            // Botões para adicionar eventos
             ElevatedButton(
               onPressed: () => _addEvent(_selectedDay),
               child: const Text('Adicionar Evento'),
             ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddRecurringEventScreen()),
+                );
+                if (result == true) {
+                  _loadEventsForMonth(_focusedDay);
+                }
+              },
+              child: const Text('Adicionar Recorrente'),
+            ),
+
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () async {
-          // Navega para a tela de cadastro
-          final result = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (_) => const AddRecurringEventScreen()),
-          );
-
-          // Se o resultado for 'true', significa que um novo evento foi salvo.
-          // Então, recarregamos os eventos para atualizar o calendário.
-          if (result == true) {
-            _loadEventsForMonth(_focusedDay);
-          }
-        },
       ),
     );
   }
