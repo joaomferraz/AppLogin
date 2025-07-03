@@ -1,31 +1,49 @@
+import 'package:flutter/material.dart';
+
 class EventModel {
   final int? id; // ID do evento único
   final String title;
   final DateTime date;
+  final TimeOfDay? time; // NOVO: horário (opcional)
+  final bool isAllDay;   // NOVO: evento de dia inteiro
   final int? recurringRuleId;
 
   EventModel({
     this.id,
     required this.title,
     required this.date,
-    this.recurringRuleId, 
+    this.time,
+    this.isAllDay = false,
+    this.recurringRuleId,
   });
 
-  // Converte o evento para um mapa para salvar no banco de dados
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'title': title,
-      'date': date.toIso8601String(), // Armazena a data como string ISO8601
+      'date': date.toIso8601String(),
+      'time': time != null ? '${time!.hour}:${time!.minute}' : null, // Armazena como string "HH:mm"
+      'isAllDay': isAllDay ? 1 : 0,
+      'recurringRuleId': recurringRuleId,
     };
   }
 
-  // Cria um evento a partir de um mapa (do banco de dados)
   factory EventModel.fromMap(Map<String, dynamic> map) {
+    final timeStr = map['time'] as String?;
+    final time = timeStr != null
+        ? TimeOfDay(
+      hour: int.parse(timeStr.split(":")[0]),
+      minute: int.parse(timeStr.split(":")[1]),
+    )
+        : null;
+
     return EventModel(
       id: map['id'],
       title: map['title'],
       date: DateTime.parse(map['date']),
+      time: time,
+      isAllDay: map['isAllDay'] == 1,
+      recurringRuleId: map['recurringRuleId'],
     );
   }
 }

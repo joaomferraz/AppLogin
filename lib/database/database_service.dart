@@ -48,7 +48,10 @@ class DatabaseService {
       CREATE TABLE $eventsTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
-        date TEXT
+        date TEXT,
+        time TEXT,
+        isAllDay INTEGER,
+        recurringRuleId INTEGER
       )
     ''');
     await db.execute('''
@@ -57,7 +60,8 @@ class DatabaseService {
         title TEXT,
         startDate TEXT,
         endDate TEXT,
-        daysOfWeek TEXT
+        daysOfWeek TEXT,
+        time TEXT
       )
     ''');
   }

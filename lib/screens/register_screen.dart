@@ -66,7 +66,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 label: 'E-mail',
                 obscure: false,
                 validator: (value) {
-                  if (value == null || !value.contains('@')) {
+                  final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
+                  if (value == null ||value.isEmpty|| !emailRegex.hasMatch(value)) {
                     return 'Informe um e-mail válido';
                   }
                   return null;

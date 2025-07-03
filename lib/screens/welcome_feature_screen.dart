@@ -210,7 +210,13 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
             (day.isBefore(rule.endDate) || isSameDay(day, rule.endDate))) {
               
           // Se sim, cria um EventModel "virtual" para este dia
-          final recurringInstance = EventModel(title: rule.title, date: day, recurringRuleId: rule.id,);
+          final recurringInstance = EventModel(
+            title: rule.title,
+            date: day,
+            time: rule.time,
+            isAllDay: rule.isAllDay,
+            recurringRuleId: rule.id,
+          );
           final dayUtc = DateTime.utc(day.year, day.month, day.day);
           
           if (newEvents[dayUtc] == null) {
@@ -246,39 +252,79 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
   // Função para adicionar evento
   void _addEvent(DateTime day) {
     TextEditingController eventController = TextEditingController();
+    TimeOfDay? selectedTime;
+    bool isAllDay = false;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Adicionar Evento'),
-          content: TextField(
-            controller: eventController,
-            decoration: const InputDecoration(hintText: 'Digite o evento'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                if (eventController.text.isNotEmpty) {
-                  final newEvent = EventModel(
-                    title: eventController.text,
-                    date: day,
-                  );
-                  await EventDao.insertEvent(newEvent); // Salva o evento no banco
-                  // Recarrega os eventos para o mês inteiro para atualizar os marcadores
-                  await _loadEventsForMonth(_focusedDay);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Adicionar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Adicionar Evento'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: eventController,
+                    decoration: const InputDecoration(hintText: 'Digite o evento'),
+                  ),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: isAllDay,
+                        onChanged: (value) {
+                          setState(() => isAllDay = value ?? false);
+                        },
+                      ),
+                      const Text('Dia inteiro'),
+                    ],
+                  ),
+                  if (!isAllDay)
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+                        if (picked != null) {
+                          setState(() => selectedTime = picked);
+                        }
+                      },
+                      child: Text(
+                        selectedTime == null
+                            ? 'Selecionar horário'
+                            : 'Horário: ${selectedTime!.format(context)}',
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    if (eventController.text.isNotEmpty) {
+                      final newEvent = EventModel(
+                        title: eventController.text,
+                        date: day,
+                        time: selectedTime,
+                        isAllDay: isAllDay,
+                      );
+                      await EventDao.insertEvent(newEvent);
+                      await _loadEventsForMonth(_focusedDay);
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Adicionar'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancelar'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -316,7 +362,6 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            // Exibição dos eventos do dia selecionado usando ValueListenableBuilder
             Expanded(
               child: ValueListenableBuilder<List<EventModel>>(
                 valueListenable: _selectedEvents,
@@ -325,12 +370,14 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
                     itemCount: value.length,
                     itemBuilder: (context, index) {
                       final event = value[index];
+
                       return ListTile(
                         title: Text(event.title),
-                        // Adiciona um ícone para indicar que é clicável
+                        subtitle: !event.isAllDay && event.time != null
+                            ? Text('Horário: ${event.time!.format(context)}')
+                            : null,
                         trailing: const Icon(Icons.more_vert),
                         onTap: () {
-                          // ABRIR O DIÁLOGO DE AÇÕES
                           _showEventActionsDialog(event);
                         },
                       );
@@ -339,7 +386,6 @@ class _WelcomeFeatureScreenState extends State<WelcomeFeatureScreen> {
                 },
               ),
             ),
-            // Botão para adicionar evento
             // Botões para adicionar eventos
             ElevatedButton(
               onPressed: () => _addEvent(_selectedDay),
