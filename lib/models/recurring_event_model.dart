@@ -27,13 +27,13 @@ class RecurringEventModel {
       'endDate': endDate.toIso8601String(),
       'daysOfWeek': daysOfWeek.join(','),
       'time': time != null ? '${time!.hour}:${time!.minute}' : null,
-      'isAllDay': isAllDay ? 1 : 0,
     };
   }
 
+
   static RecurringEventModel fromMap(Map<String, dynamic> map) {
     final timeStr = map['time'] as String?;
-    final time = timeStr != null
+    final parsedTime = timeStr != null
         ? TimeOfDay(
       hour: int.parse(timeStr.split(":")[0]),
       minute: int.parse(timeStr.split(":")[1]),
@@ -49,8 +49,7 @@ class RecurringEventModel {
           .split(',')
           .map((day) => int.parse(day))
           .toList(),
-      time: time,
-      isAllDay: map['isAllDay'] == 1,
+      time: parsedTime,
     );
   }
-}
+  }

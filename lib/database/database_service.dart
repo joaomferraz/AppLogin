@@ -74,7 +74,8 @@ class DatabaseService {
           title TEXT,
           startDate TEXT,
           endDate TEXT,
-          daysOfWeek TEXT
+          daysOfWeek TEXT,
+          time TEXT
         )
       ''');
     }
