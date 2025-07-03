@@ -14,13 +14,16 @@ class EditEventScreen extends StatefulWidget {
 class _EditEventScreenState extends State<EditEventScreen> {
   late TextEditingController _titleController;
   late DateTime _selectedDate;
+  TimeOfDay? _selectedTime;
+  bool _isAllDay = false;
 
   @override
   void initState() {
     super.initState();
-    // Preenche os campos com os dados do evento existente
     _titleController = TextEditingController(text: widget.event.title);
     _selectedDate = widget.event.date;
+    _selectedTime = widget.event.time;
+    _isAllDay = widget.event.isAllDay;
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -30,29 +33,34 @@ class _EditEventScreenState extends State<EditEventScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime ?? TimeOfDay.now(),
+    );
+    if (picked != null) {
+      setState(() => _selectedTime = picked);
     }
   }
 
   void _saveChanges() {
-    if (_titleController.text.isEmpty) {
-      // Adicionar feedback se necessário
-      return;
-    }
+    if (_titleController.text.isEmpty) return;
 
     final updatedEvent = EventModel(
-      id: widget.event.id, // MANTÉM O ID ORIGINAL
+      id: widget.event.id,
       title: _titleController.text,
       date: _selectedDate,
+      time: _isAllDay ? null : _selectedTime,
+      isAllDay: _isAllDay,
     );
 
     EventDao.updateEvent(updatedEvent).then((_) {
-      if (mounted) {
-        Navigator.pop(context, true); // Retorna true para indicar sucesso
-      }
+      if (mounted) Navigator.pop(context, true);
     });
   }
 
@@ -71,13 +79,26 @@ class _EditEventScreenState extends State<EditEventScreen> {
             const SizedBox(height: 20),
             Row(
               children: [
-                Expanded(child: Text('Data: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}')),
+                Expanded(
+                    child: Text('Data: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}')),
                 TextButton(
                   onPressed: () => _selectDate(context),
                   child: const Text('Alterar Data'),
                 ),
               ],
             ),
+            CheckboxListTile(
+              value: _isAllDay,
+              onChanged: (value) => setState(() => _isAllDay = value!),
+              title: const Text('Evento o dia inteiro'),
+            ),
+            if (!_isAllDay)
+              TextButton(
+                onPressed: () => _selectTime(context),
+                child: Text(_selectedTime == null
+                    ? 'Selecionar Horário'
+                    : 'Horário: ${_selectedTime!.format(context)}'),
+              ),
             const Spacer(),
             ElevatedButton(
               onPressed: _saveChanges,

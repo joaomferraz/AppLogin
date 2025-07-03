@@ -108,7 +108,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 label: 'E-mail',
                 obscure: false,
                 validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
+                  final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
+                  if (value == null ||value.isEmpty|| !emailRegex.hasMatch(value)) {
                     return 'Informe um e-mail válido';
                   }
                   return null;

@@ -60,7 +60,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(images[index], height: 300),
+                Expanded(
+                  child: Image.asset(
+                    images[index],
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                  ),
+                ),
+
                 const SizedBox(height: 30),
                 Text(
                   texts[index],
