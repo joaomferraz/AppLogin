@@ -36,6 +36,28 @@ class EventDao {
     );
   }
 
+static Future<List<EventModel>> getEventsForMonth(DateTime month) async {
+    final db = await _getDatabase();
+
+    // Calcula o primeiro e o último dia do mês
+    final firstDayOfMonth = DateTime(month.year, month.month, 1);
+    final lastDayOfMonth = DateTime(month.year, month.month + 1, 0); // Truque para pegar o último dia
+
+    final result = await db.query(
+      _tableName,
+      where: 'date >= ? AND date <= ?',
+      whereArgs: [
+        firstDayOfMonth.toIso8601String(),
+        // Adiciona o fim do dia para garantir que todos os eventos do último dia sejam incluídos
+        lastDayOfMonth.toIso8601String().substring(0, 10) + ' 23:59:59.999',
+      ],
+    );
+
+    return result.isNotEmpty
+        ? result.map((e) => EventModel.fromMap(e)).toList()
+        : [];
+  }
+
   // Função para buscar os eventos por data
   static Future<List<EventModel>> getEventsByDate(DateTime date) async {
     final db = await _getDatabase();
