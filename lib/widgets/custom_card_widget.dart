@@ -17,7 +17,7 @@ class CustomCardWidget extends StatelessWidget {
             Icon(Icons.lock_outline, size: 40, color: Colors.deepPurple),
             SizedBox(height: 10),
             Text(
-              'Bem-vindo ao Login App!',
+              'Bem-vindo à sua agenda!',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Text('Por favor, autentique-se para continuar.')

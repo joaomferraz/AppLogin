@@ -58,7 +58,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Bem-vindo, ${user.email}!',
+              'Bem-vindo, ${user.name}!',
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),

@@ -40,7 +40,8 @@ class DatabaseService {
       CREATE TABLE $usersTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE,
-        password TEXT
+        password TEXT,
+        name TEXT
       )
     ''');
     await db.execute('''

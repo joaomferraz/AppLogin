@@ -15,6 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
+  final _nameController = TextEditingController();
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
@@ -27,7 +28,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
       final newUser = UserModel(
         email: _emailController.text,
-        password: _senhaController.text
+        password: _senhaController.text,
+        name: _nameController.text,
       );
       await UserDao.insertUser(newUser);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,6 +49,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
           key: _formKey,
           child: Column(
             children: [
+              LoginTextFormField(
+                controller: _nameController,
+                label: 'Nome',
+                obscure: false,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Informe seu nome';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               LoginTextFormField(
                 controller: _emailController,
                 label: 'E-mail',
