@@ -18,5 +18,5 @@ class AppLocalizationsPt extends AppLocalizations {
   String get onboard3 => 'Acesse com segurança de qualquer lugar.';
 
   @override
-  String get welcome => 'Bem-vindo à sua Agenda Pessoal!';
+  String get welcome => 'Bem-vindo à sua Agenda Pessoal';
 }
