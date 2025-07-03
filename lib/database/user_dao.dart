@@ -1,15 +1,11 @@
 import '../models/user_model.dart';
 import 'package:sqflite/sqflite.dart';
-import 'database_service.dart'; // Importe o serviço central
+import 'database_service.dart';
 
 class UserDao {
-  // ✅ USA O NOME DA TABELA DEFINIDO NO SERVIÇO
   static const String _tableName = DatabaseService.usersTable;
 
-  // ❌ A FUNÇÃO _getDatabase() FOI REMOVIDA
-
   static Future<void> insertUser(UserModel user) async {
-    // ✅ USA A INSTÂNCIA DO SERVIÇO
     final db = await DatabaseService.instance.database;
     await db.insert(
       _tableName,
@@ -19,7 +15,6 @@ class UserDao {
   }
 
   static Future<UserModel?> getUserByEmail(String email) async {
-    // ✅ USA A INSTÂNCIA DO SERVIÇO
     final db = await DatabaseService.instance.database;
     final result = await db.query(
       _tableName,
@@ -31,5 +26,16 @@ class UserDao {
       return UserModel.fromMap(result.first);
     }
     return null;
+  }
+
+  /// Atualiza um usuário existente no banco de dados.
+  static Future<void> updateUser(UserModel user) async {
+    final db = await DatabaseService.instance.database;
+    await db.update(
+      _tableName,
+      user.toMap(),
+      where: 'id = ?', // Garante que estamos atualizando o usuário correto
+      whereArgs: [user.id],
+    );
   }
 }
