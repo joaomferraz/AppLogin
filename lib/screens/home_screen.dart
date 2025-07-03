@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tela Principal'),
+        title: const Text('My Tasks'),
         actions: [
           IconButton(
             icon: const Icon(Icons.brightness_6),
